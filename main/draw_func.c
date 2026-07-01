@@ -101,3 +101,79 @@ void fill_rect(int x0, int y0, int x1, int y1, uint16_t col) {
         draw_hline_buf(x0, x1, y, col);
     }
 }
+
+
+
+
+// Draw Clock
+
+void draw_colon(uint16_t colour)
+{
+    fill_rect(117,101,122,110,colour);
+    fill_rect(117,127,122,137,colour);
+}
+
+
+void draw_segment(int x, int y,int A, int B, int C, int D, int E, int F, int G,uint16_t colour)
+{
+
+    if(A!=0)
+    {        draw_line(x,y+102,x+46,y+102,colour);
+    }
+    if(B!=0)
+    {        draw_line(x+46,y+51,x+46,y+102,colour);
+    }
+    if(C!=0)
+    {        draw_line(x+46,y,x+46,y+51,colour);
+    }
+    if(D!=0)
+    {        draw_line(x,y,x+46,y,colour);
+    }
+    if(E!=0)
+    {     
+            draw_line(x,y,x,y+51,colour);
+    }
+    if(F!=0)
+    {        draw_line(x,y+51,x,y+102,colour);
+    }
+    if(G!=0)
+    {        draw_line(x,y+51,x+46,y+51,colour);
+    }
+}
+
+void draw_digit(int digit, int x, int y,uint16_t colour)
+{
+    switch(digit)
+    {
+        case 0:
+            draw_segment(x,y,1,1,1,1,1,1,0,colour);
+            break;
+        case 1:
+            draw_segment(x,y,0,1,1,0,0,0,0,colour);
+            break;
+        case 2:
+            draw_segment(x,y,1,1,0,1,1,0,1,colour);
+            break;
+        case 3:
+            draw_segment(x,y,1,1,1,1,0,0,1,colour);
+            break;
+        case 4:
+            draw_segment(x,y,0,1,1,0,0,1,1,colour);
+            break;
+        case 5:
+            draw_segment(x,y,1 ,0 ,1 ,1 ,0 ,1 ,1 ,colour);
+            break;
+        case 6:
+            draw_segment(x,y ,1 ,0 ,1 ,1 ,1 ,1 ,1 ,colour);
+            break;
+        case 7:
+            draw_segment(x,y ,1 ,1 ,1 ,0 ,0 ,0 ,0 ,colour);
+            break;
+        case 8:
+            draw_segment(x,y ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,colour);
+            break;
+        case 9:
+            draw_segment(x,y ,1 ,1 ,1 ,0 ,0 ,1 ,1 ,colour);
+            break;
+    }
+}
