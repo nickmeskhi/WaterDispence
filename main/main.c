@@ -14,6 +14,13 @@
 
 static const char *TAG = "gc9a01_test";
 
+static const int SEGMENT_1_X = 15;
+static const int SEGMENT_2_X = 69;
+static const int SEGMENT_3_X = 123;
+static const int SEGMENT_4_X = 177;
+static const int SEGMENT_Y = 69;
+
+
 // ── Pin config ── adjust to your wiring ──────────────────
 #define PIN_MOSI    23
 #define PIN_SCLK    18
@@ -85,6 +92,96 @@ static void draw_colon(uint16_t colour)
 }
 
 
+static void draw_segment(int x, int y,int A, int B, int C, int D, int E, int F, int G,uint16_t colour)
+{
+
+    if(A!=0)
+    {        draw_line(x,y+102,x+46,y+102,colour);
+    }
+    if(B!=0)
+    {        draw_line(x+46,y+51,x+46,y+102,colour);
+    }
+    if(C!=0)
+    {        draw_line(x+46,y,x+46,y+51,colour);
+    }
+    if(D!=0)
+    {        draw_line(x,y,x+46,y,colour);
+    }
+    if(E!=0)
+    {     
+            draw_line(x,y,x,y+51,colour);
+    }
+    if(F!=0)
+    {        draw_line(x,y+51,x,y+102,colour);
+    }
+    if(G!=0)
+    {        draw_line(x,y+51,x+46,y+51,colour);
+    }
+}
+
+static void draw_digit(int digit, int x, int y,uint16_t colour)
+{
+    switch(digit)
+    {
+        case 0:
+            draw_segment(x,y,1,1,1,1,1,1,0,colour);
+            break;
+        case 1:
+            draw_segment(x,y,0,1,1,0,0,0,0,colour);
+            break;
+        case 2:
+            draw_segment(x,y,1,1,0,1,1,0,1,colour);
+            break;
+        case 3:
+            draw_segment(x,y,1,1,1,1,0,0,1,colour);
+            break;
+        case 4:
+            draw_segment(x,y,0,1,1,0,0,1,1,colour);
+            break;
+        case 5:
+            draw_segment(x,y,1 ,0 ,1 ,1 ,0 ,1 ,1 ,colour);
+            break;
+        case 6:
+            draw_segment(x,y ,1 ,0 ,1 ,1 ,1 ,1 ,1 ,colour);
+            break;
+        case 7:
+            draw_segment(x,y ,1 ,1 ,1 ,0 ,0 ,0 ,0 ,colour);
+            break;
+        case 8:
+            draw_segment(x,y ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,colour);
+            break;
+        case 9:
+            draw_segment(x,y ,1 ,1 ,1 ,0 ,0 ,1 ,1 ,colour);
+            break;
+    }
+}
+
+static void segment_test(void)
+{
+    
+        fill_screen(C_BLACK);
+        draw_segment(SEGMENT_1_X,SEGMENT_Y,1,0,0,0,0,0,0,C_BLUE);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        fill_screen(C_BLACK);
+        draw_segment(SEGMENT_1_X,SEGMENT_Y,0,1,0,0,0,0,0,C_BLUE);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        fill_screen(C_BLACK);
+        draw_segment(SEGMENT_1_X,SEGMENT_Y,0,0,1,0,0,0,0,C_BLUE);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        fill_screen(C_BLACK);
+        draw_segment(SEGMENT_1_X,SEGMENT_Y,0,0,0,1,0,0,0,C_BLUE);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        fill_screen(C_BLACK);
+        draw_segment(SEGMENT_1_X,SEGMENT_Y,0,0,0,0,1,0,0,C_BLUE);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        fill_screen(C_BLACK);
+        draw_segment(SEGMENT_1_X,SEGMENT_Y,0,0,0,0,0,1,0,C_BLUE);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        fill_screen(C_BLACK);
+        draw_segment(SEGMENT_1_X,SEGMENT_Y,0,0,0,0,0,0,1,C_BLUE);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    
+}
 
 
 void app_main(void) {
@@ -99,16 +196,29 @@ void app_main(void) {
     draw_rect(123,69,169,171,C_RED);
     draw_rect(177,69,223,171,C_YELLOW);
 
-
+while(1)
+{
+    for(int i=0;i<10;i++)
+    {
+        fill_screen(C_BLACK);
+        draw_digit(i,SEGMENT_1_X,SEGMENT_Y,C_BLUE);
+        draw_digit(i,SEGMENT_2_X,SEGMENT_Y,C_GREEN);
+        draw_digit(i,SEGMENT_3_X,SEGMENT_Y,C_RED);
+        draw_digit(i,SEGMENT_4_X,SEGMENT_Y,C_YELLOW);
+        draw_colon(C_WHITE);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+    
+}
 
    // fill_rect(117,101,122,137,C_BLUE);
     
-    vTaskDelay(pdMS_TO_TICKS(2500));
+    vTaskDelay(pdMS_TO_TICKS(2000));
     
 
 
-    fill_rect(117,101,122,110,C_BLUE);
-    fill_rect(117,127,122,137,C_BLUE);
+   // fill_rect(117,101,122,110,C_BLUE);
+  //  fill_rect(117,127,122,137,C_BLUE);
 
 }
 
