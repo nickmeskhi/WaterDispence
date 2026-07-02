@@ -44,5 +44,7 @@ void fill_rect(int x0, int y0, int x1, int y1, uint16_t col);
 void draw_colon(uint16_t colour);
 void draw_segment(int x, int y,int A, int B, int C, int D, int E, int F, int G,uint16_t colour);
 void draw_digit(int digit, int x, int y, uint16_t colour);
+void blink_colon(uint16_t colour);
+void select_digit_1(int digit,int x,int y,uint16_t colour);
 
 #endif // DRAW_FUNC_H

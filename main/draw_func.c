@@ -18,6 +18,8 @@ uint16_t line_buf[LCD_W];
 // Panel handle — defined here and referenced from main
 esp_lcd_panel_handle_t panel = NULL;
 
+
+
 // Fill whole screen with one colour using line-by-line writes
 void fill_screen(uint16_t colour) {
 	for (int x = 0; x < LCD_W; x++) line_buf[x] = colour;
@@ -113,31 +115,47 @@ void draw_colon(uint16_t colour)
     fill_rect(117,127,122,137,colour);
 }
 
+void blink_colon(uint16_t colour)
+{
+    draw_colon(colour);
+    vTaskDelay(pdMS_TO_TICKS(500));
+    draw_colon(C_BLACK);
+    vTaskDelay(pdMS_TO_TICKS(500));
+}
+
 
 void draw_segment(int x, int y,int A, int B, int C, int D, int E, int F, int G,uint16_t colour)
 {
 
     if(A!=0)
-    {        draw_line(x,y+102,x+46,y+102,colour);
+    {   //     draw_line(x,y+102,x+46,y+102,colour);
+        fill_rect(x+2,y+98,x+42,y+100,colour);
+        
     }
     if(B!=0)
-    {        draw_line(x+46,y+51,x+46,y+102,colour);
+    {    //    draw_line(x+46,y+51,x+46,y+102,colour);
+        fill_rect(x+40,y+100,x+42,y+50,colour);
     }
     if(C!=0)
-    {        draw_line(x+46,y,x+46,y+51,colour);
+    {    //    draw_line(x+46,y,x+46,y+51,colour);
+        fill_rect(x+40,y+2,x+42,y+50,colour);
     }
     if(D!=0)
-    {        draw_line(x,y,x+46,y,colour);
+    {   //     draw_line(x,y,x+46,y,colour);
+        fill_rect(x+2,y+2,x+42,y+4,colour);
     }
     if(E!=0)
     {     
-            draw_line(x,y,x,y+51,colour);
+         //   draw_line(x,y,x,y+51,colour);
+            fill_rect(x+2,y+2,x+4,y+50,colour);
     }
     if(F!=0)
-    {        draw_line(x,y+51,x,y+102,colour);
+    {     //   draw_line(x,y+51,x,y+102,colour);
+        fill_rect(x+2,y+50,x+4,y+100,colour);
     }
     if(G!=0)
-    {        draw_line(x,y+51,x+46,y+51,colour);
+    {    //    draw_line(x,y+51,x+46,y+51,colour);
+        fill_rect(x+2,y+50,x+42,y+52,colour);
     }
 }
 
@@ -176,4 +194,22 @@ void draw_digit(int digit, int x, int y,uint16_t colour)
             draw_segment(x,y ,1 ,1 ,1 ,0 ,0 ,1 ,1 ,colour);
             break;
     }
+}
+
+
+void select_digit_1(int digit,int x,int y,uint16_t colour)
+{
+    
+    
+        
+            fill_rect(15,69,61,171,C_BLACK);
+            draw_digit(digit,x,y,colour);
+            vTaskDelay(pdMS_TO_TICKS(500));
+            fill_rect(15,69,61,171,colour);
+            draw_digit(digit,x,y,C_BLACK);
+            vTaskDelay(pdMS_TO_TICKS(500));
+
+        
+
+   
 }

@@ -10,15 +10,48 @@
 #include "esp_lcd_gc9a01.h"
 #include "esp_log.h"
 #include "esp_lcd_types.h"
-#include "draw_func.h"
 
-static const char *TAG = "gc9a01_test";
+#include "draw_func.h"  // draw helpers are implemented in draw_func.c
+#include "test_patterns.h" // Test patterns implemented in test_patterns.c
+
+
 
 static const int SEGMENT_1_X = 15;
-static const int SEGMENT_2_X = 69;
-static const int SEGMENT_3_X = 123;
-static const int SEGMENT_4_X = 177;
+//static const int SEGMENT_2_X = 69;
+//static const int SEGMENT_3_X = 123;
+//static const int SEGMENT_4_X = 177;
 static const int SEGMENT_Y = 69;
+
+// Button configuration
+#define OK  32
+#define RIGHT  33
+#define LEFT  25
+#define UP  26
+#define DOWN  27
+
+static bool button_pressed_once(int pin, int *last_state)
+{
+    int level = gpio_get_level(pin);
+    bool pressed = (level == 0);
+    bool just_pressed = pressed && (*last_state != 0);
+    *last_state = level;
+    return just_pressed;
+}
+
+void setup() {
+    gpio_set_direction(OK, GPIO_MODE_INPUT);
+    gpio_set_pull_mode(OK, GPIO_PULLUP_ONLY);
+    gpio_set_direction(RIGHT, GPIO_MODE_INPUT);
+    gpio_set_pull_mode(RIGHT, GPIO_PULLUP_ONLY);
+    gpio_set_direction(LEFT, GPIO_MODE_INPUT);
+    gpio_set_pull_mode(LEFT, GPIO_PULLUP_ONLY);
+    gpio_set_direction(UP, GPIO_MODE_INPUT);
+    gpio_set_pull_mode(UP, GPIO_PULLUP_ONLY);
+    gpio_set_direction(DOWN, GPIO_MODE_INPUT);
+    gpio_set_pull_mode(DOWN, GPIO_PULLUP_ONLY);
+}
+
+
 
 
 // ── Pin config ── adjust to your wiring ──────────────────
@@ -32,16 +65,13 @@ static const int SEGMENT_Y = 69;
 #define SPI_HOST    SPI2_HOST
 #define SPI_CLK_HZ  (40 * 1000 * 1000)
 
-// draw helpers are implemented in draw_func.c
 
 
-// Test patterns implemented in test_patterns.c
-#include "test_patterns.h"
 
 // ── LCD init ──────────────────────────────────────────────
 
 static void lcd_init(void) {
-    ESP_LOGI(TAG, "Init SPI bus");
+    ESP_LOGI("Screen", "Init SPI bus");
     spi_bus_config_t bus_cfg = {
         .mosi_io_num     = PIN_MOSI,
         .miso_io_num     = -1,
@@ -52,7 +82,7 @@ static void lcd_init(void) {
     };
     ESP_ERROR_CHECK(spi_bus_initialize(SPI_HOST, &bus_cfg, SPI_DMA_CH_AUTO));
 
-    ESP_LOGI(TAG, "Init LCD IO");
+    ESP_LOGI("Screen", "Init LCD IO");
     esp_lcd_panel_io_handle_t io_handle = NULL;
     esp_lcd_panel_io_spi_config_t io_cfg = {
         .dc_gpio_num       = PIN_DC,
@@ -66,7 +96,7 @@ static void lcd_init(void) {
     ESP_ERROR_CHECK(esp_lcd_new_panel_io_spi(
         (esp_lcd_spi_bus_handle_t)SPI_HOST, &io_cfg, &io_handle));
 
-    ESP_LOGI(TAG, "Init GC9A01 panel");
+    ESP_LOGI("Screen", "Init GC9A01 panel");
     esp_lcd_panel_dev_config_t panel_cfg = {
         .reset_gpio_num  = PIN_RST,
         .rgb_ele_order   = LCD_RGB_ELEMENT_ORDER_BGR,
@@ -90,28 +120,22 @@ void app_main(void) {
     lcd_init();
     fill_screen(C_BLACK);
     vTaskDelay(pdMS_TO_TICKS(300));
-   // draw_line(0, 119, 239, 119, C_RED);
- //   draw_line(119, 0, 119, 239, C_RED);
-   // draw_rect(11, 69, 228, 171, C_BLUE);
-   draw_rect(15,69,61,171,C_BLUE);
+
+ 
+ 
+ //  draw_rect(15,69,61,171,C_BLUE);
    draw_rect(69,69,115,171,C_GREEN);
     draw_rect(123,69,169,171,C_RED);
     draw_rect(177,69,223,171,C_YELLOW);
 
-while(1)
-{
-    for(int i=0;i<10;i++)
+
+    for (int i = 0; i < 10; i++)
     {
-        fill_screen(C_BLACK);
-        draw_digit(i,SEGMENT_1_X,SEGMENT_Y,C_BLUE);
-        draw_digit(i,SEGMENT_2_X,SEGMENT_Y,C_GREEN);
-        draw_digit(i,SEGMENT_3_X,SEGMENT_Y,C_RED);
-        draw_digit(i,SEGMENT_4_X,SEGMENT_Y,C_YELLOW);
-        draw_colon(C_WHITE);
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        select_digit_1(i, SEGMENT_1_X, SEGMENT_Y, C_WHITE);
     }
+   
     
-}
+
 
    // fill_rect(117,101,122,137,C_BLUE);
     
@@ -156,7 +180,7 @@ while(1)
     // Done
     fill_screen(C_BLACK);
     draw_circle(CX, CY, CR - 1, C_GREEN);
-    ESP_LOGI(TAG, "All tests complete"); 
+  
 
 
 
