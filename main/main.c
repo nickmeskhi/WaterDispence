@@ -16,11 +16,11 @@
 
 
 
-static const int SEGMENT_1_X = 15;
+//static const int SEGMENT_1_X = 15;
 //static const int SEGMENT_2_X = 69;
 //static const int SEGMENT_3_X = 123;
 //static const int SEGMENT_4_X = 177;
-static const int SEGMENT_Y = 69;
+//static const int SEGMENT_Y = 69;
 
 // Button configuration
 #define OK  32
@@ -116,80 +116,25 @@ static void lcd_init(void) {
 
 
 
+
+
+
+
+
+
 void app_main(void) {
     lcd_init();
     fill_screen(C_BLACK);
     vTaskDelay(pdMS_TO_TICKS(300));
 
  
- 
- //  draw_rect(15,69,61,171,C_BLUE);
-   draw_rect(69,69,115,171,C_GREEN);
-    draw_rect(123,69,169,171,C_RED);
-    draw_rect(177,69,223,171,C_YELLOW);
-
-
-    for (int i = 0; i < 10; i++)
-    {
-        select_digit_1(i, SEGMENT_1_X, SEGMENT_Y, C_WHITE);
-    }
-   
-    
-
-
-   // fill_rect(117,101,122,137,C_BLUE);
+circular_clock_marks();
+draw_hour_numerals();
     
     vTaskDelay(pdMS_TO_TICKS(2000));
     
 
 
-   // fill_rect(117,101,122,110,C_BLUE);
-  //  fill_rect(117,127,122,137,C_BLUE);
-
 }
 
 
-
-
-//All the tested functions
-/*
-    lcd_init();
-    fill_screen(C_BLACK);
-    vTaskDelay(pdMS_TO_TICKS(300));
-
-    test_solid_colours();
- while (1){
-
-  draw_line(0, 120, 240, 120, C_RED);
-  draw_line(120, 0, 120, 240, C_GREEN);
-  //draw_rect(10, 10, 230, 230, C_BLUE);
-  //fill_rect(20, 20, 220, 220, C_YELLOW);
-  vTaskDelay(pdMS_TO_TICKS(25));
-
- }
-
-    
- 
-   test_colour_wedges();
-  test_concentric_rings();
-    test_grid();
-    test_clock_marks();
-    test_checkerboard();
-    test_greyscale_ramp();
-
-    // Done
-    fill_screen(C_BLACK);
-    draw_circle(CX, CY, CR - 1, C_GREEN);
-  
-
-
-
-
-
-
-
-
-
-
-
-*/

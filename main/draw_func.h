@@ -41,10 +41,25 @@ void fill_circle(int cx, int cy, int r, uint16_t col);
 void draw_circle(int cx, int cy, int r, uint16_t col);
 void draw_rect(int x0, int y0, int x1, int y1, uint16_t col);
 void fill_rect(int x0, int y0, int x1, int y1, uint16_t col);
+
+//Old digital clock helper prototypes
+/*
 void draw_colon(uint16_t colour);
 void draw_segment(int x, int y,int A, int B, int C, int D, int E, int F, int G,uint16_t colour);
 void draw_digit(int digit, int x, int y, uint16_t colour);
 void blink_colon(uint16_t colour);
 void select_digit_1(int digit,int x,int y,uint16_t colour);
+*/
+
+
+// Clock helper prototypes
+#define GLYPH_W   5
+#define GLYPH_H   8
+#define GLYPH_GAP 2
+
+void draw_glyph(char c, int x, int y, uint16_t col);
+void draw_roman_string(const char *s, int cx, int cy, uint16_t col);
+void draw_hour_numerals(void);
+void circular_clock_marks(void);
 
 #endif // DRAW_FUNC_H
