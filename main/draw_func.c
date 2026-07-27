@@ -249,27 +249,24 @@ void draw_roman_string(const char *s, int cx, int cy, uint16_t col) {
 
 /* ---- the 12 hour labels, upright, sitting inside the tick ring ---- */
 void draw_hour_numerals(void) {
-/*    static const char *ROMAN[12] = {
+    static const char *ROMAN[12] = {
         "I", "II", "III", "IV", "V",  "VI",
         "VII", "VIII", "IX", "X", "XI", "XII"
     };
-*/
-    static const char *ROMAN[12] = {
-        "XI", "X", "IX", "VIII", "VII",  "VI",
-        "V", "IV", "III", "II", "I", "XII"
-    };
+
+
     const int r_num = CR - 28;   // pull in from the ticks - tune to your CR
 
     for (int h = 1; h <= 12; h++) {
-        float rad = (h * 30 + 90) * M_PI / 180.0f;   // -90 puts XII at the top
+        float rad = (h * 30 - 90) * M_PI / 180.0f;   // -90 puts XII at the top
         int nx = CX + r_num * cosf(rad);
-        int ny = CY + r_num * sinf(rad);
+        int ny = CY + r_num * sinf(-rad);
         draw_roman_string(ROMAN[h - 1], nx, ny, C_WHITE);
     }
 }
 
 void circular_clock_marks(void) {
-    fill_screen(C_BLACK);
+
     draw_circle(CX, CY, CR - 2, C_WHITE);
     for (int deg = 0; deg < 360; deg += 6) {
         float rad   = deg * M_PI / 180.0f;

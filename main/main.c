@@ -113,10 +113,42 @@ static void lcd_init(void) {
 // ── Entry point ───────────────────────────────────────────
 
 
+static void second_hand (int second , uint16_t colour)
+{
+    int second_angle = (second % 60) * 6; // Each second represents 6 degrees
+    float rad = (second_angle - 90) * M_PI / 180.0f; // Adjust for 12 o'clock position
+    int second_length = CR; // Length of the second hand
+    int x1 = CX + second_length * cosf(rad);
+    int y1 = CY + second_length * sinf(-rad);
+    draw_line(CX, CY, x1, y1, colour);
+    draw_hour_numerals();
+    fill_circle(CX, CY, 4, C_WHITE); 
+}
 
 
+static void minute_hand (int minute , uint16_t colour)
+{
+    int minute_angle = (minute % 60) * 6; // Each minute represents 6 degrees
+    float rad = (minute_angle - 90) * M_PI / 180.0f; // Adjust for 12 o'clock position
+    int minute_length = CR - 40; // Length of the minute hand
+    int x1 = CX + minute_length * cosf(rad);
+    int y1 = CY + minute_length * sinf(-rad);
+    draw_line(CX, CY, x1, y1, colour);
+    draw_hour_numerals();
+    fill_circle(CX, CY, 4, C_WHITE); 
+}
 
-
+static void hour_hand (int hour , uint16_t colour)
+{
+    int hour_angle = ((hour % 12) * 30); // Each hour represents 30 degrees, and each minute adds 0.5 degrees
+    float rad = (hour_angle - 90) * M_PI / 180.0f; // Adjust for 12 o'clock position
+    int hour_length = CR - 80; // Length of the hour hand
+    int x1 = CX + hour_length * cosf(rad);
+    int y1 = CY + hour_length * sinf(-rad);
+    draw_line(CX, CY, x1, y1, colour);
+    draw_hour_numerals();
+    fill_circle(CX, CY, 4, C_WHITE); 
+}
 
 
 
@@ -130,6 +162,30 @@ void app_main(void) {
  
 circular_clock_marks();
 draw_hour_numerals();
+
+while (1) {
+    for(int hour = 0; hour < 12; hour++) {
+        hour_hand(hour-1, C_BLACK); // Erase previous hour hand
+        vTaskDelay(pdMS_TO_TICKS(100)); // Short delay to ensure the previous hand is erased before drawing the new one
+        hour_hand(hour, C_GREEN);
+        for(int minute = 0; minute < 60; minute++) {
+            minute_hand(minute-1, C_BLACK); // Erase previous minute hand
+            vTaskDelay(pdMS_TO_TICKS(100)); // Short delay to ensure the previous hand is erased before drawing the new one
+            minute_hand(minute, C_BLUE);
+            for(int second = 0; second < 60; second++) {
+                second_hand(second-1, C_BLACK); // Erase previous second hand
+                minute_hand(minute, C_BLUE);
+                hour_hand(hour, C_GREEN);
+                circular_clock_marks();
+                vTaskDelay(pdMS_TO_TICKS(10)); // Short delay to ensure the previous hand is erased before drawing the new one
+                second_hand(second, C_RED);
+                vTaskDelay(pdMS_TO_TICKS(990)); // Wait for 1 second before updating the second hand
+                
+            }
+    }
+    
+        
+    }
     
     vTaskDelay(pdMS_TO_TICKS(2000));
     
@@ -137,4 +193,4 @@ draw_hour_numerals();
 
 }
 
-
+}
