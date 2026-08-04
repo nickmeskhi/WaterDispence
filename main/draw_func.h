@@ -57,9 +57,5 @@ void select_digit_1(int digit,int x,int y,uint16_t colour);
 #define GLYPH_H   8
 #define GLYPH_GAP 2
 
-void draw_glyph(char c, int x, int y, uint16_t col);
-void draw_roman_string(const char *s, int cx, int cy, uint16_t col);
-void draw_hour_numerals(void);
-void circular_clock_marks(void);
 
 #endif // DRAW_FUNC_H

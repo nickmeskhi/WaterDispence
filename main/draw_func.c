@@ -109,6 +109,8 @@ void fill_rect(int x0, int y0, int x1, int y1, uint16_t col) {
 
 
 
+
+
 // Draw Clock (Old version, replaced by circular_clock_marks() and draw_hour_numerals())
 /*
 void draw_colon(uint16_t colour)
@@ -216,75 +218,3 @@ void select_digit_1(int digit,int x,int y,uint16_t colour)
    
 }
 */
-// New circular design for clock marks, with 60 ticks and 12 longer ticks for hours
-
-void draw_glyph(char c, int x, int y, uint16_t col) {
-    switch (c) {
-        case 'I':
-            draw_line(x + 2, y, x + 2, y + GLYPH_H - 1, col);
-            break;
-        case 'V':
-            draw_line(x,     y + GLYPH_H -1 , x + 2, y , col);
-            draw_line(x + 4, y  + GLYPH_H - 1, x + 2, y, col);
-            break;
-        case 'X':
-            draw_line(x, y,              x + 4, y + GLYPH_H - 1, col);
-            draw_line(x, y + GLYPH_H - 1, x + 4, y,              col);
-            break;
-    }
-}
-
-
-
-void draw_roman_string(const char *s, int cx, int cy, uint16_t col) {
-    int len   = (int)strlen(s);
-    int width = len * GLYPH_W + (len - 1) * GLYPH_GAP;
-    int x = cx - width / 2;
-    int y = cy - GLYPH_H / 2;
-    for (int i = 0; s[i]; i++) {
-        draw_glyph(s[i], x, y, col);
-        x += GLYPH_W + GLYPH_GAP;
-    }
-}
-
-/* ---- the 12 hour labels, upright, sitting inside the tick ring ---- */
-void draw_hour_numerals(void) {
-    static const char *ROMAN[12] = {
-        "I", "II", "III", "IV", "V",  "VI",
-        "VII", "VIII", "IX", "X", "XI", "XII"
-    };
-
-
-    const int r_num = CR - 28;   // pull in from the ticks - tune to your CR
-
-    for (int h = 1; h <= 12; h++) {
-        float rad = (h * 30 - 90) * M_PI / 180.0f;   // -90 puts XII at the top
-        int nx = CX + r_num * cosf(rad);
-        int ny = CY + r_num * sinf(-rad);
-        draw_roman_string(ROMAN[h - 1], nx, ny, C_WHITE);
-    }
-}
-
-void circular_clock_marks(void) {
-
-    draw_circle(CX, CY, CR - 2, C_WHITE);
-    for (int deg = 0; deg < 360; deg += 6) {
-        float rad   = deg * M_PI / 180.0f;
-        int   r_out = CR - 3;
-        int   r_in  = (deg % 30 == 0) ? CR - 16 : CR - 9;
-        uint16_t col = (deg % 30 == 0) ? C_WHITE : C_GREY;
-        int x0 = CX + r_out * cosf(rad), y0 = CY + r_out * sinf(rad);
-        int x1 = CX + r_in  * cosf(rad), y1 = CY + r_in  * sinf(rad);
-        int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
-        int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
-        int err = dx + dy;
-        while (1) {
-            draw_pixel(x0, y0, col);
-            if (x0 == x1 && y0 == y1) break;
-            int e2 = 2 * err;
-            if (e2 >= dy) { err += dy; x0 += sx; }
-            if (e2 <= dx) { err += dx; y0 += sy; }
-        }
-    }
-    fill_circle(CX, CY, 4, C_WHITE);
-}

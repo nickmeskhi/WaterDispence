@@ -12,9 +12,16 @@
 #include "esp_lcd_types.h"
 
 #include "draw_func.h"  // draw helpers are implemented in draw_func.c
+#include "clock.h" // draw clock
 #include "test_patterns.h" // Test patterns implemented in test_patterns.c
 
+static const char *TAG = "main";
 
+static int last_up = 1;
+static int last_down = 1;
+static int last_ok = 1;
+static int last_left = 1;
+static int last_right = 1;
 
 //static const int SEGMENT_1_X = 15;
 //static const int SEGMENT_2_X = 69;
@@ -22,21 +29,13 @@
 //static const int SEGMENT_4_X = 177;
 //static const int SEGMENT_Y = 69;
 
-// Button configuration
+// Button pin definitions (shared across main and clock)
 #define OK  32
 #define RIGHT  33
 #define LEFT  25
 #define UP  26
 #define DOWN  27
 
-static bool button_pressed_once(int pin, int *last_state)
-{
-    int level = gpio_get_level(pin);
-    bool pressed = (level == 0);
-    bool just_pressed = pressed && (*last_state != 0);
-    *last_state = level;
-    return just_pressed;
-}
 
 void setup() {
     gpio_set_direction(OK, GPIO_MODE_INPUT);
@@ -110,87 +109,40 @@ static void lcd_init(void) {
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel, true));
 }
 
-// ── Entry point ───────────────────────────────────────────
 
-
-static void second_hand (int second , uint16_t colour)
-{
-    int second_angle = (second % 60) * 6; // Each second represents 6 degrees
-    float rad = (second_angle - 90) * M_PI / 180.0f; // Adjust for 12 o'clock position
-    int second_length = CR; // Length of the second hand
-    int x1 = CX + second_length * cosf(rad);
-    int y1 = CY + second_length * sinf(-rad);
-    draw_line(CX, CY, x1, y1, colour);
-    draw_hour_numerals();
-    fill_circle(CX, CY, 4, C_WHITE); 
+static bool button_pressed(int gpio_num, int *last_state) {
+    int current_state = gpio_get_level(gpio_num);
+    if (current_state == 0 && *last_state == 1) {
+        *last_state = 0;
+        return true; // Button was just pressed
+    } else if (current_state == 1 && *last_state == 0) {
+        *last_state = 1; // Button was released
+    }
+    return false;
 }
-
-
-static void minute_hand (int minute , uint16_t colour)
-{
-    int minute_angle = (minute % 60) * 6; // Each minute represents 6 degrees
-    float rad = (minute_angle - 90) * M_PI / 180.0f; // Adjust for 12 o'clock position
-    int minute_length = CR - 40; // Length of the minute hand
-    int x1 = CX + minute_length * cosf(rad);
-    int y1 = CY + minute_length * sinf(-rad);
-    draw_line(CX, CY, x1, y1, colour);
-    draw_hour_numerals();
-    fill_circle(CX, CY, 4, C_WHITE); 
-}
-
-static void hour_hand (int hour , uint16_t colour)
-{
-    int hour_angle = ((hour % 12) * 30); // Each hour represents 30 degrees, and each minute adds 0.5 degrees
-    float rad = (hour_angle - 90) * M_PI / 180.0f; // Adjust for 12 o'clock position
-    int hour_length = CR - 80; // Length of the hour hand
-    int x1 = CX + hour_length * cosf(rad);
-    int y1 = CY + hour_length * sinf(-rad);
-    draw_line(CX, CY, x1, y1, colour);
-    draw_hour_numerals();
-    fill_circle(CX, CY, 4, C_WHITE); 
-}
-
-
 
 
 
 void app_main(void) {
     lcd_init();
     fill_screen(C_BLACK);
+    setup();
     vTaskDelay(pdMS_TO_TICKS(300));
+    int state = 0;
+    int time = 0;
+    int second = 0;
+    int minute = 0;
+    int hour = 0;
 
+   active_clock(second,minute,hour,state,time);
+
+
+  // select_clock(minute,hour,state,UP,DOWN,OK);
+   // active_clock(second,minute,hour,state,time);
  
-circular_clock_marks();
-draw_hour_numerals();
-
-while (1) {
-    for(int hour = 0; hour < 12; hour++) {
-        hour_hand(hour-1, C_BLACK); // Erase previous hour hand
-        vTaskDelay(pdMS_TO_TICKS(100)); // Short delay to ensure the previous hand is erased before drawing the new one
-        hour_hand(hour, C_GREEN);
-        for(int minute = 0; minute < 60; minute++) {
-            minute_hand(minute-1, C_BLACK); // Erase previous minute hand
-            vTaskDelay(pdMS_TO_TICKS(100)); // Short delay to ensure the previous hand is erased before drawing the new one
-            minute_hand(minute, C_BLUE);
-            for(int second = 0; second < 60; second++) {
-                second_hand(second-1, C_BLACK); // Erase previous second hand
-                minute_hand(minute, C_BLUE);
-                hour_hand(hour, C_GREEN);
-                circular_clock_marks();
-                vTaskDelay(pdMS_TO_TICKS(10)); // Short delay to ensure the previous hand is erased before drawing the new one
-                second_hand(second, C_RED);
-                vTaskDelay(pdMS_TO_TICKS(990)); // Wait for 1 second before updating the second hand
-                
-            }
-    }
-    
-        
-    }
-    
     vTaskDelay(pdMS_TO_TICKS(2000));
     
 
 
 }
 
-}
