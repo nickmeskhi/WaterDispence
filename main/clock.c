@@ -141,9 +141,43 @@ void active_clock(int second, int minute, int hour,int state,int time)
     circular_clock_marks();
     draw_hour_numerals();
     while (state == 1)
-    
-    
     {
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        second++;
+        time++;
+        ESP_LOGI(TAG, "This is the time: %d", time);
+        second_hand(second-1, C_BLACK); // Erase previous second hand
+        minute_hand(minute, C_BLUE);
+        hour_hand(hour, C_GREEN);
+        circular_clock_marks();
+        second_hand(second, C_RED);
+        if (second >= 60) {
+            second = 0;
+            minute++;
+            minute_hand(minute-1, C_BLACK);
+            if (minute >= 60) {
+                minute = 0;
+                hour++;
+                hour_hand(hour-1, C_BLACK);
+                if (hour >= 12) {
+                    hour = 0;
+                }
+            }
+        }
+
+
+    } 
+    
+
+
+
+
+
+
+
+
+    /*
+    {                     
     for(;hour < 12; hour++) 
         {
         hour_hand(hour-1, C_BLACK); // Erase previous hour hand
@@ -164,12 +198,27 @@ void active_clock(int second, int minute, int hour,int state,int time)
                 second_hand(second, C_RED);
                 vTaskDelay(pdMS_TO_TICKS(990)); // Wait for 1 second before updating the second hand
                 time ++;
+                if (time >= 60) {
+                    time = 0;
+                    minute++;
+                    if (minute >= 60) {
+                        minute = 0;
+                        hour++;
+                        if (hour >= 12) {
+                            hour = 0;
+                        }
+                    }
+                }
                 ESP_LOGI(TAG, "This is the time: %d", time);
-            }}}}}
+            }}}}
+        */
+        
+        
+        }
     
 
 
-            void select_clock(int minute, int hour, int state,bool up,bool down,bool ok)
+void select_clock(int minute, int hour, int state,bool up,bool down,bool ok)
 {
     circular_clock_marks();
     draw_hour_numerals();
