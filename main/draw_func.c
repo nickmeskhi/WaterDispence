@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stdbool.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -148,7 +149,7 @@ static void draw_char(int x, int y, char c, uint16_t col) {
         for (int ix = 0; ix < 5; ix++) {
             uint8_t bits = glyph[ix];
             for (int iy = 0; iy < 7; iy++) {
-                if (bits & (1 << iy)) draw_pixel(x + ix, y + iy, col);
+                if (bits & (1 << iy)) draw_pixel(x + ix, y + (6 - iy), col);
             }
         }
         return;
@@ -159,21 +160,61 @@ static void draw_char(int x, int y, char c, uint16_t col) {
     for (int ix = 0; ix < 5; ix++) {
         uint8_t bits = glyph[ix];
         for (int iy = 0; iy < 7; iy++) {
-            if (bits & (1 << iy)) draw_pixel(x + ix, y + iy, col);
+            if (bits & (1 << iy)) draw_pixel(x + ix, y + (6 - iy), col);
         }
     }
 }
 
-void draw_text(const char *s, int x, int y, uint16_t col) {
+static void draw_char_scaled(int x, int y, char c, uint16_t col, int scale) {
+    if (c == ' ') return;
+    if (c == '?') {
+        const uint8_t *glyph = font5x7[26];
+        for (int ix = 0; ix < 5; ix++) {
+            uint8_t bits = glyph[ix];
+            for (int iy = 0; iy < 7; iy++) {
+                if (bits & (1 << iy)) {
+                    for (int sx = 0; sx < scale; sx++) {
+                        for (int sy = 0; sy < scale; sy++) {
+                            draw_pixel(x + ix * scale + sx, y + (6 - iy) * scale + sy, col);
+                        }
+                    }
+                }
+            }
+        }
+        return;
+    }
+    if (c >= 'a' && c <= 'z') c -= 'a' - 'A';
+    if (c < 'A' || c > 'Z') return;
+    const uint8_t *glyph = font5x7[c - 'A'];
+    for (int ix = 0; ix < 5; ix++) {
+        uint8_t bits = glyph[ix];
+        for (int iy = 0; iy < 7; iy++) {
+            if (bits & (1 << iy)) {
+                for (int sx = 0; sx < scale; sx++) {
+                    for (int sy = 0; sy < scale; sy++) {
+                        draw_pixel(x + ix * scale + sx, y + (6 - iy) * scale + sy, col);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void draw_text_size(const char *s, int x, int y, uint16_t col, int size) {
+    if (size < 1) size = 1;
     int cx = x;
     for (const char *p = s; *p; p++) {
         if (*p == ' ') {
-            cx += 4;
+            cx += 4 * size;
             continue;
         }
-        draw_char(cx, y, *p, col);
-        cx += 6;
+        draw_char_scaled(cx, y, *p, col, size);
+        cx += 6 * size;
     }
+}
+
+void draw_text(const char *s, int x, int y, uint16_t col) {
+    draw_text_size(s, x, y, col, 2);
 }
 
 

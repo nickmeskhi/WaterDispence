@@ -11,8 +11,6 @@ void circular_clock_marks(void);
 void second_hand(int second, uint16_t colour);
 void minute_hand(int minute, uint16_t colour);
 void hour_hand(int hour, uint16_t colour);
-void active_clock(int second,int minute,int hour, int *state,int time);
-void select_clock(int *minute,int *hour, int *state,int *time);
 
 
 

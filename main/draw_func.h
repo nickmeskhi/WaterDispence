@@ -42,6 +42,7 @@ void draw_circle(int cx, int cy, int r, uint16_t col);
 void draw_rect(int x0, int y0, int x1, int y1, uint16_t col);
 void fill_rect(int x0, int y0, int x1, int y1, uint16_t col);
 void draw_text(const char *s, int x, int y, uint16_t col);
+void draw_text_size(const char *s, int x, int y, uint16_t col, int size);
 
 //Old digital clock helper prototypes
 /*
