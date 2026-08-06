@@ -128,18 +128,16 @@ void app_main(void) {
     fill_screen(C_BLACK);
     setup();
     vTaskDelay(pdMS_TO_TICKS(300));
-    int state = 1;
-
+    int state = 0;
     int second = 0;
-    int minute = 25;
-    int hour = 4;
-    int time = minute*60+hour*3600;
+    int minute = 0;
+    int hour = 0;
+    int time = 0;
 
-   active_clock(second,minute,hour,state,time);
-
-
-  // select_clock(minute,hour,state,UP,DOWN,OK);
-   // active_clock(second,minute,hour,state,time);
+    select_clock(&minute,&hour,&state,&time);
+    active_clock(second,minute,hour,&state,time);
+    
+   
  
     vTaskDelay(pdMS_TO_TICKS(2000));
     

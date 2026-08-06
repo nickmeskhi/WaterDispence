@@ -14,7 +14,26 @@
 
 static const char *TAG = "clock";
 
+#define OK  32
+#define RIGHT  33
+#define LEFT  25
+#define UP  26
+#define DOWN  27
 
+static int last_up = 1;
+static int last_down = 1;
+static int last_ok = 1;
+
+static bool button_pressed(int gpio_num, int *last_state) {
+    int current_state = gpio_get_level(gpio_num);
+    if (current_state == 0 && *last_state == 1) {
+        *last_state = 0;
+        return true;
+    } else if (current_state == 1 && *last_state == 0) {
+        *last_state = 1;
+    }
+    return false;
+}
 
 
 
@@ -136,12 +155,13 @@ void hour_hand (int hour , uint16_t colour)
 
 //To call function active clock
 
-void active_clock(int second, int minute, int hour,int state,int time)
+void active_clock(int second, int minute, int hour,int *state,int time)
 {
     circular_clock_marks();
     draw_hour_numerals();
-    while (state == 1)
-    {
+
+    while (*state == 2)
+    {  
         vTaskDelay(pdMS_TO_TICKS(1000));
         second++;
         time++;
@@ -151,149 +171,111 @@ void active_clock(int second, int minute, int hour,int state,int time)
         hour_hand(hour, C_GREEN);
         circular_clock_marks();
         second_hand(second, C_RED);
-        if (second >= 60) {
+        if (second >= 60) 
+        {
             second = 0;
             minute++;
             minute_hand(minute-1, C_BLACK);
-            if (minute >= 60) {
+            if (minute >= 60) 
+            {
                 minute = 0;
                 hour++;
                 hour_hand(hour-1, C_BLACK);
-                if (hour >= 12) {
+                if (hour >= 12) 
+                {
                     hour = 0;
                 }
             }
         }
-
-
+        
     } 
+}
     
 
 
-
-
-
-
-
-
-    /*
-    {                     
-    for(;hour < 12; hour++) 
-        {
-        hour_hand(hour-1, C_BLACK); // Erase previous hour hand
-        vTaskDelay(pdMS_TO_TICKS(100)); // Short delay to ensure the previous hand is erased before drawing the new one
-        hour_hand(hour, C_GREEN);
-        for(;minute < 60; minute++) 
-        {
-            minute_hand(minute-1, C_BLACK); // Erase previous minute hand
-            vTaskDelay(pdMS_TO_TICKS(100)); // Short delay to ensure the previous hand is erased before drawing the new one
-            minute_hand(minute, C_BLUE);
-            for(;second < 60; second++) 
-            {
-                second_hand(second-1, C_BLACK); // Erase previous second hand
-                minute_hand(minute, C_BLUE);
-                hour_hand(hour, C_GREEN);
-                circular_clock_marks();
-                vTaskDelay(pdMS_TO_TICKS(10)); // Short delay to ensure the previous hand is erased before drawing the new one
-                second_hand(second, C_RED);
-                vTaskDelay(pdMS_TO_TICKS(990)); // Wait for 1 second before updating the second hand
-                time ++;
-                if (time >= 60) {
-                    time = 0;
-                    minute++;
-                    if (minute >= 60) {
-                        minute = 0;
-                        hour++;
-                        if (hour >= 12) {
-                            hour = 0;
-                        }
-                    }
-                }
-                ESP_LOGI(TAG, "This is the time: %d", time);
-            }}}}
-        */
-        
-        
-        }
-    
-
-
-void select_clock(int minute, int hour, int state,bool up,bool down,bool ok)
+void select_clock(int *minute, int *hour, int *state,int *time)
 {
     circular_clock_marks();
-    draw_hour_numerals();
-    minute_hand(0,C_BLUE);
-    hour_hand(0,C_GREEN);
-    while(state==0)
+    while (*state == 0)
     {
-        if(up==1)
-        {
-            hour++;
-            
-            if (hour>12)
-            {
-                hour=0;
-            }
-            hour_hand(hour-1,C_BLACK);
-            hour_hand(hour,C_GREEN);
-            
-        }
-        if (down==1)
-        {
-            hour--;
-            if(hour<=0)
-            {
-                hour=12;
-            }
-            hour_hand(hour-1,C_BLACK);
-            hour_hand(hour,C_GREEN);
-        }
-        if (ok==1)
-        {
-            
-            if(up==1)
-            {
-                minute++;
-            if (minute>60)
-            {
-                minute=0;
-            }
-            minute_hand(minute-1,C_BLACK);
-            minute_hand(minute,C_BLUE);
-            }
-            if (down==1)
-            {
-                minute--;
-                if(minute<0)
-                {
-                    minute=60;
+        hour_hand(*hour, C_GREEN);
+        bool up = button_pressed(UP, &last_up);
+        bool down = button_pressed(DOWN, &last_down);
+        bool ok = button_pressed(OK, &last_ok);
 
-                }
-                minute_hand(minute-1,C_BLACK);
-                minute_hand(minute,C_BLUE);
-            }
-            if (ok==1)
-            {
-                state=0;
-
-            }
-            else
-            {
-                vTaskDelay(pdMS_TO_TICKS(10));
-               // time=minute*60+hour*3600;
-            }
-            
-            
-        }
-        else
+        if(up)
         {
-           vTaskDelay(pdMS_TO_TICKS(10));
+            ESP_LOGI(TAG, "UP button pressed");
+            (*hour)++;
+            hour_hand(*hour-1,C_BLACK);
+            hour_hand(*hour,C_GREEN);
+            if (*hour>12)
+            {
+                *hour=0;
+            }
         }
-        
-
-
+        if(down)
+        {
+            ESP_LOGI(TAG, "DOWN button pressed");
+            (*hour)--;
+            hour_hand(*hour+1,C_BLACK);
+            hour_hand(*hour,C_GREEN);
+            if(*hour==0)
+            {
+                *hour=12;
+            }
+        }
+        if(ok)
+        {
+            ESP_LOGI(TAG, "OK button pressed");
+            *state=1;
+        }
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
+    while (*state == 1)
+    {
+        minute_hand(*minute, C_BLUE);
+        bool up = button_pressed(UP, &last_up);
+        bool down = button_pressed(DOWN, &last_down);
+        bool ok = button_pressed(OK, &last_ok);
 
+        if(up)
+        {
+            ESP_LOGI(TAG, "UP button pressed");
+            (*minute)++;
+            hour_hand(*hour,C_GREEN);
+            minute_hand(*minute-1,C_BLACK);
+            minute_hand(*minute,C_BLUE);
+            if (*minute>59)
+            {
+                *minute=0;
+            }
+        }
+        if(down)
+        {
+            ESP_LOGI(TAG, "DOWN button pressed");
+            (*minute)--;
+            hour_hand(*hour,C_GREEN);
+            minute_hand(*minute+1,C_BLACK);
+            minute_hand(*minute,C_BLUE);
+            if(*minute==0)
+            {
+                *minute=59;
+            }
+        }
+        if(ok)
+        {
+            ESP_LOGI(TAG, "OK button pressed");
+            *state=2;
+        }
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+    
+    *time = *minute*60+*hour*3600;
+    if (*time<0)
+    {
+        *time=-*time;
+    }
 
 
 } 
