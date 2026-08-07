@@ -95,7 +95,7 @@ void active_clock(int second, int minute, int hour, int *state, int time) {
     while (*state == 2) {
         for (int tick = 0; tick < 100; tick++) {
             if (button_pressed(OK, &last_ok)) {
-                ESP_LOGI(TAG, "OK button pressed");
+               // ESP_LOGI(TAG, "OK button pressed");
                 *state = 3;
                 return;
             }
@@ -103,7 +103,7 @@ void active_clock(int second, int minute, int hour, int *state, int time) {
         }
         second++;
         time++;
-        ESP_LOGI(TAG, "This is the time: %d", time);
+       // ESP_LOGI(TAG, "This is the time: %d", time);
         second_hand(second - 1, C_BLACK); // Erase previous second hand
         minute_hand(minute, C_BLUE);
         hour_hand(hour, C_GREEN);

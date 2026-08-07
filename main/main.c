@@ -62,7 +62,7 @@ void setup() {
 // No backlight pin — BL wire goes to 3.3V directly
 
 #define SPI_HOST    SPI2_HOST
-#define SPI_CLK_HZ  (40 * 1000 * 1000)
+#define SPI_CLK_HZ  (5 * 1000 * 1000)
 
 
 
