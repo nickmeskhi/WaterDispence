@@ -4,6 +4,7 @@
 #include "freertos/task.h"
 #include "driver/gpio.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "draw_func.h"
 #include "clock.h"
 #include "op_func.h"
@@ -88,40 +89,69 @@ void prompt_func(int *state) {
     }
 }
 
-void active_clock(int second, int minute, int hour, int *state, int time) {
+void active_clock(int *second, int *minute, int *hour, int *state, int *time) {
     fill_screen(C_BLACK);
     circular_clock_marks();
     draw_hour_numerals();
+    hour_hand(*hour, C_GREEN);
+    minute_hand(*minute, C_BLUE);
+    second_hand(*second, C_RED);
+
+    // Free-running 1 Hz time base. Counting vTaskDelay() iterations drifts,
+    // because the redraw below costs far more than the delay itself.
+    int64_t next_tick_us = esp_timer_get_time() + 1000000;
+
     while (*state == 2) {
-        for (int tick = 0; tick < 100; tick++) {
-            if (button_pressed(OK, &last_ok)) {
-               // ESP_LOGI(TAG, "OK button pressed");
-                *state = 3;
-                return;
-            }
-            vTaskDelay(pdMS_TO_TICKS(10));
+        if (button_pressed(OK, &last_ok)) {
+            // ESP_LOGI(TAG, "OK button pressed");
+            *state = 3;
+            return;
         }
-        second++;
-        time++;
-       // ESP_LOGI(TAG, "This is the time: %d", time);
-        second_hand(second - 1, C_BLACK); // Erase previous second hand
-        minute_hand(minute, C_BLUE);
-        hour_hand(hour, C_GREEN);
-        circular_clock_marks();
-        second_hand(second, C_RED);
-        if (second >= 60) {
-            second = 0;
-            minute++;
-            minute_hand(minute - 1, C_BLACK);
-            if (minute >= 60) {
-                minute = 0;
-                hour++;
-                hour_hand(hour - 1, C_BLACK);
-                if (hour >= 12) {
-                    hour = 0;
+
+        // Advance by however many whole seconds actually elapsed, so a slow
+        // redraw makes the hands jump rather than making the clock run late.
+        int elapsed = 0;
+        while (esp_timer_get_time() >= next_tick_us) {
+            next_tick_us += 1000000;
+            elapsed++;
+        }
+
+        if (elapsed > 0) {
+            int prev_second = *second;
+            int prev_minute = *minute;
+            int prev_hour = *hour;
+
+            for (int i = 0; i < elapsed; i++) {
+                (*time)++;
+                (*second)++;
+                if (*second >= 60) {
+                    *second = 0;
+                    (*minute)++;
+                    if (*minute >= 60) {
+                        *minute = 0;
+                        (*hour)++;
+                        if (*hour >= 12) {
+                            *hour = 0;
+                        }
+                    }
                 }
             }
+            // ESP_LOGI(TAG, "This is the time: %d", *time);
+
+            second_hand(prev_second, C_BLACK); // Erase previous second hand
+            if (*minute != prev_minute) {
+                minute_hand(prev_minute, C_BLACK);
+            }
+            if (*hour != prev_hour) {
+                hour_hand(prev_hour, C_BLACK);
+            }
+            circular_clock_marks();
+            hour_hand(*hour, C_GREEN);
+            minute_hand(*minute, C_BLUE);
+            second_hand(*second, C_RED);
         }
+
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
 

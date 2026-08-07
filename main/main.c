@@ -10,6 +10,7 @@
 #include "esp_lcd_gc9a01.h"
 #include "esp_log.h"
 #include "esp_lcd_types.h"
+#include "esp_timer.h"
 
 #include "draw_func.h"  // draw helpers are implemented in draw_func.c
 #include "op_func.h"
@@ -143,13 +144,20 @@ void app_main(void) {
         }
         if(state==2)
         {
-            active_clock(second,minute,hour,&state,time);
+            active_clock(&second,&minute,&hour,&state,&time);
         }
         if(state==3)
         {
             prompt_func(&state);
         }
-        
+        if(state==4)
+        {
+            // "Set the function" screen is not implemented yet; fall back to the
+            // running clock so the main loop cannot stall here.
+            ESP_LOGW(TAG, "function setup not implemented, returning to clock");
+            state = 2;
+        }
+
         vTaskDelay(pdMS_TO_TICKS(100));
     }
 
@@ -159,4 +167,3 @@ void app_main(void) {
 
 
 }
-
