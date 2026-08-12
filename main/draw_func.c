@@ -219,7 +219,7 @@ void draw_text(const char *s, int x, int y, uint16_t col) {
 
 
 // Draw Clock (Old version, replaced by circular_clock_marks() and draw_hour_numerals())
-/*
+
 void draw_colon(uint16_t colour)
 {
     fill_rect(117,101,122,110,colour);
@@ -239,33 +239,33 @@ void draw_segment(int x, int y,int A, int B, int C, int D, int E, int F, int G,u
 {
 
     if(A!=0)
-    {   //     draw_line(x,y+102,x+46,y+102,colour);
+    {  
         fill_rect(x+2,y+98,x+42,y+100,colour);
         
     }
     if(B!=0)
-    {    //    draw_line(x+46,y+51,x+46,y+102,colour);
+    {   
         fill_rect(x+40,y+100,x+42,y+50,colour);
     }
     if(C!=0)
-    {    //    draw_line(x+46,y,x+46,y+51,colour);
+    {  
         fill_rect(x+40,y+2,x+42,y+50,colour);
     }
     if(D!=0)
-    {   //     draw_line(x,y,x+46,y,colour);
+    {   
         fill_rect(x+2,y+2,x+42,y+4,colour);
     }
     if(E!=0)
     {     
-         //   draw_line(x,y,x,y+51,colour);
-            fill_rect(x+2,y+2,x+4,y+50,colour);
+        
+        fill_rect(x+2,y+2,x+4,y+50,colour);
     }
     if(F!=0)
-    {     //   draw_line(x,y+51,x,y+102,colour);
+    {     
         fill_rect(x+2,y+50,x+4,y+100,colour);
     }
     if(G!=0)
-    {    //    draw_line(x,y+51,x+46,y+51,colour);
+    {   
         fill_rect(x+2,y+50,x+42,y+52,colour);
     }
 }
@@ -324,4 +324,3 @@ void select_digit_1(int digit,int x,int y,uint16_t colour)
 
    
 }
-*/

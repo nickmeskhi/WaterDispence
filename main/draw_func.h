@@ -45,13 +45,13 @@ void draw_text(const char *s, int x, int y, uint16_t col);
 void draw_text_size(const char *s, int x, int y, uint16_t col, int size);
 
 //Old digital clock helper prototypes
-/*
+
 void draw_colon(uint16_t colour);
 void draw_segment(int x, int y,int A, int B, int C, int D, int E, int F, int G,uint16_t colour);
 void draw_digit(int digit, int x, int y, uint16_t colour);
 void blink_colon(uint16_t colour);
 void select_digit_1(int digit,int x,int y,uint16_t colour);
-*/
+
 
 
 // Clock helper prototypes

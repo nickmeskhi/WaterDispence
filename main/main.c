@@ -16,20 +16,20 @@
 #include "op_func.h"
 #include "test_patterns.h" // Test patterns implemented in test_patterns.c
 
-static const char *TAG = "main";
+//static const char *TAG = "main";
 
 static int last_up = 1;
 static int last_down = 1;
 static int last_ok = 1;
 static int last_left = 1;
 static int last_right = 1;
-
-//static const int SEGMENT_1_X = 15;
-//static const int SEGMENT_2_X = 69;
-//static const int SEGMENT_3_X = 123;
-//static const int SEGMENT_4_X = 177;
-//static const int SEGMENT_Y = 69;
-
+/*
+static const int SEGMENT_1_X = 15;
+static const int SEGMENT_2_X = 69;
+static const int SEGMENT_3_X = 123;
+static const int SEGMENT_4_X = 177;
+static const int SEGMENT_Y = 69;
+*/
 // Button pin definitions (shared across main and clock)
 #define OK  32
 #define RIGHT  33
@@ -136,31 +136,35 @@ void app_main(void) {
     int time = 0;
 
 
+    int set_time = 0;
+    int set_duration = 0;
+    int set_day_count = 1;
+
     while (1) 
     {
         if(state==0)
         {
             select_clock(&minute,&hour,&state,&time);
         }
-        if(state==2)
+        if(state==3)
         {
             active_clock(&second,&minute,&hour,&state,&time);
         }
-        if(state==3)
+        if(state==4)
         {
             prompt_func(&state);
         }
-        if(state==4)
+        if(state==5)
         {
-            // "Set the function" screen is not implemented yet; fall back to the
-            // running clock so the main loop cannot stall here.
-            ESP_LOGW(TAG, "function setup not implemented, returning to clock");
-            state = 2;
+            set_function(&state, &set_time, &set_duration, &set_day_count);
+        }
+        if(state==11)
+        {
+            active_function_clock(&second, &minute, &hour, &state, &time, &set_time, &set_duration, &set_day_count);
         }
 
         vTaskDelay(pdMS_TO_TICKS(100));
     }
-
  
     vTaskDelay(pdMS_TO_TICKS(2000));
     
