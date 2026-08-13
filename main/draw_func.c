@@ -308,19 +308,14 @@ void draw_digit(int digit, int x, int y,uint16_t colour)
 }
 
 
-void select_digit_1(int digit,int x,int y,uint16_t colour)
-{
-    
-    
-        
-            fill_rect(15,69,61,171,C_BLACK);
-            draw_digit(digit,x,y,colour);
-            vTaskDelay(pdMS_TO_TICKS(500));
-            fill_rect(15,69,61,171,colour);
-            draw_digit(digit,x,y,C_BLACK);
-            vTaskDelay(pdMS_TO_TICKS(500));
-
-        
-
-   
+void draw_arc(int start_angle, int end_angle, int radius, uint16_t colour) {
+    int span = end_angle - start_angle;
+    if (span < 0) span += 360; /* wrap around */
+    for (int i = 0; i <= span; i++) {
+        int deg = start_angle + i;
+        float rad = deg * M_PI / 180.0f;
+        int x = CX + radius * cosf(rad);
+        int y = CY + radius * sinf(-rad);
+        draw_pixel(x, y, colour);
+    }
 }

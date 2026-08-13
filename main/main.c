@@ -140,6 +140,10 @@ void app_main(void) {
     int set_duration = 0;
     int set_day_count = 1;
 
+
+
+
+
     while (1) 
     {
         if(state==0)
@@ -160,11 +164,16 @@ void app_main(void) {
         }
         if(state==11)
         {
-            active_function_clock(&second, &minute, &hour, &state, &time, &set_time, &set_duration, &set_day_count);
+            func_clock(&second,&minute,&hour,&state,&time,&set_time,&set_duration,&set_day_count);
         }
+
 
         vTaskDelay(pdMS_TO_TICKS(100));
     }
+
+    
+
+
  
     vTaskDelay(pdMS_TO_TICKS(2000));
     

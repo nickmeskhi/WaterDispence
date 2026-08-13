@@ -95,7 +95,7 @@ void prompt_func(int *state) {
     }
 }
 
-void set_function(int *state, int *set_time, int *set_duration, int *set_day_count) {
+void set_function(int *state, int *set_time, int *set_duration, int *set_day_delay) {
     fill_screen(C_BLACK);
     int set_hour_1 = 0;
     int set_hour_2 = 0;
@@ -144,7 +144,7 @@ void set_function(int *state, int *set_time, int *set_duration, int *set_day_cou
         if (up) {
             ESP_LOGI(TAG, "UP button pressed");
             set_hour_2++;
-            if (set_hour_2 > 4) {
+            if (set_hour_2 > 4 && set_hour_1 == 2) {
                 set_hour_2 = 0;
             }
             draw_digit(8, SEGMENT_2_X, SEGMENT_Y, C_BLACK);
@@ -231,8 +231,7 @@ void set_function(int *state, int *set_time, int *set_duration, int *set_day_cou
     *set_time = (set_hour_1 * 10 + set_hour_2) * 3600 + (set_minute_1 * 10 + set_minute_2) * 60;
 
     fill_screen(C_BLACK);
-    draw_text("Day count (1=today)", 10, 50, C_WHITE);
-    draw_text("2=tomorrow", 50, 30, C_WHITE);
+    draw_text("Day set", 30, 50, C_WHITE);
 
     draw_digit(0, SEGMENT_2_X, SEGMENT_Y, C_YELLOW);
     draw_digit(1, SEGMENT_3_X, SEGMENT_Y, C_YELLOW);
@@ -253,8 +252,10 @@ void set_function(int *state, int *set_time, int *set_duration, int *set_day_cou
                 day_count_1++;
                 if (day_count_1 > 9) {
                     day_count_1 = 0;
+
                 }
             }
+            
             draw_digit(8, SEGMENT_2_X, SEGMENT_Y, C_BLACK);
             draw_digit(8, SEGMENT_3_X, SEGMENT_Y, C_BLACK);
             draw_digit(day_count_1, SEGMENT_2_X, SEGMENT_Y, C_YELLOW);
@@ -270,6 +271,10 @@ void set_function(int *state, int *set_time, int *set_duration, int *set_day_cou
                     day_count_1 = 9;
                 }
             }
+            if(day_count_1 == 0 && day_count_2 == 0) {
+                day_count_1 = 0;
+                day_count_2 = 1;
+            }
             draw_digit(8, SEGMENT_2_X, SEGMENT_Y, C_BLACK);
             draw_digit(8, SEGMENT_3_X, SEGMENT_Y, C_BLACK);
             draw_digit(day_count_1, SEGMENT_2_X, SEGMENT_Y, C_YELLOW);
@@ -282,11 +287,7 @@ void set_function(int *state, int *set_time, int *set_duration, int *set_day_cou
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 
-    *set_day_count = day_count_1 * 10 + day_count_2;
-    if (*set_day_count < 1) {
-        *set_day_count = 1;
-    }
-    ESP_LOGI(TAG, "Set day count: %d", *set_day_count);
+    *set_day_delay = (day_count_1 * 10 + day_count_2);
 
     fill_screen(C_BLACK);
     draw_text("Duration IN MIN", 30, 50, C_WHITE);
@@ -347,7 +348,7 @@ void set_function(int *state, int *set_time, int *set_duration, int *set_day_cou
 
 void active_clock(int *second, int *minute, int *hour, int *state, int *time) {
     fill_screen(C_BLACK);
-    circular_clock_marks();
+    circular_clock_marks(C_WHITE);
     draw_hour_numerals();
     hour_hand(*hour, C_GREEN);
     minute_hand(*minute, C_BLUE);
@@ -401,7 +402,7 @@ void active_clock(int *second, int *minute, int *hour, int *state, int *time) {
             if (*hour != prev_hour) {
                 hour_hand(prev_hour, C_BLACK);
             }
-            circular_clock_marks();
+            circular_clock_marks(C_WHITE);
             hour_hand(*hour, C_GREEN);
             minute_hand(*minute, C_BLUE);
             second_hand(*second, C_RED);
@@ -411,81 +412,93 @@ void active_clock(int *second, int *minute, int *hour, int *state, int *time) {
     }
 }
 
-static void draw_hour_marker(int hour_pos, uint16_t colour) {
-    int r_inner = CR - 12;
-    int r_outer = CR - 6;
-    float angle = hour_pos * 30.0f - 90.0f;
-    float rad = angle * M_PI / 180.0f;
-    int x0 = CX + r_inner * cosf(rad);
-    int y0 = CY + r_inner * sinf(-rad);
-    int x1 = CX + r_outer * cosf(rad);
-    int y1 = CY + r_outer * sinf(-rad);
-    draw_line(x0, y0, x1, y1, colour);
-}
-
-static int calculate_next_trigger(int current_seconds, int set_time_of_day, int day_count) {
-    int current_day_seconds = current_seconds % 86400;
-    if (current_day_seconds < 0) {
-        current_day_seconds += 86400;
-    }
-    int target_seconds = set_time_of_day % 86400;
-    if (target_seconds < 0) {
-        target_seconds += 86400;
-    }
-
-    int day_offset = day_count - 1;
-    if (day_offset < 0) {
-        day_offset = 0;
-    }
-
-    int base_day = current_seconds - current_day_seconds;
-    int trigger = base_day + day_offset * 86400 + target_seconds;
-    if (current_day_seconds >= target_seconds) {
-        trigger += 86400;
-    }
-    return trigger;
-}
-
-static void draw_remaining_hours(int current_seconds, int end_seconds) {
-    int remaining_seconds = end_seconds - current_seconds;
-    if (remaining_seconds <= 0) {
-        return;
-    }
-
-    int current_hour = (current_seconds / 3600) % 12;
-    if (current_hour < 0) {
-        current_hour += 12;
-    }
-
-    int hours_left = (remaining_seconds + 3599) / 3600;
-    if (hours_left > 24) {
-        hours_left = 24;
-    }
-
-    draw_circle(CX, CY, CR - 10, C_YELLOW);
-    for (int i = 1; i <= hours_left; i++) {
-        int marker_hour = (current_hour + i) % 12;
-        draw_hour_marker(marker_hour, C_GREEN);
+void draw_arc_hour_marker(int hour_1,int hour_2, uint16_t colour) 
+{
+    
+    
+    for(int j=0; j <=10; j++) 
+    {
+        draw_arc(hour_1 * 30-90, hour_2 * 30-90, CR - 6-j, colour);
+            
     }
 }
 
-void active_function_clock(int *second, int *minute, int *hour, int *state, int *time, int *set_time, int *set_duration, int *set_day_count) {
+void arc_trigger (int *time, int *set_time, int *set_day_delay, int *elapsed_day)
+{
+    int remaining_days = *set_day_delay - *elapsed_day;
+
+    /* Compute total remaining seconds until the next trigger, taking
+       remaining_days into account. Ensure the value is > 0 so the arc
+       always represents a forward interval. */
+    long total_remaining = (long)(*set_time) - (long)(*time) + (long)remaining_days * 86400L;
+    while (total_remaining <= 0) total_remaining += 86400L;
+
+    /* Start angle based on current time (fractional hours). End angle
+       is start + span corresponding to total_remaining hours. Angles
+       are in degrees; one hour == 30 degrees on the 12-hour face. */
+    double start_hours = ((double)(*time)) / 3600.0;
+    double start_angle = start_hours * 30.0 - 90.0; /* -90 to make 12 o'clock at top */
+    double span_hours = ((double)total_remaining) / 3600.0;
+    double end_angle = start_angle + span_hours * 30.0;
+
+    /* Clear existing ring area first (draw full ring black). */
+    for (int j = 0; j <= 10; j++) {
+        draw_arc(-90, -90 + 360, CR - 6 - j, C_BLACK);
+    }
+
+    if (remaining_days == 0) {
+        /* If the remaining span is 12 hours or more, draw a full circle
+           (so 1:00 -> 13:00 appears as a full ring). Otherwise draw the
+           arc from start to end. */
+        if (span_hours >= 12.0 - 1e-6) {
+            for (int j = 0; j <= 10; j++) {
+                draw_arc((int)round(start_angle), (int)round(start_angle + 360.0), CR - 6 - j, C_YELLOW);
+            }
+            ESP_LOGI(TAG, "Full ring: remaining_hours=%.2f", span_hours);
+        } else {
+            for (int j = 0; j <= 10; j++) {
+                draw_arc((int)round(start_angle), (int)round(end_angle), CR - 6 - j, C_YELLOW);
+            }
+            ESP_LOGI(TAG, "Start angle: %.1f, End angle: %.1f, remaining_hours=%.2f", start_angle, end_angle, span_hours);
+        }
+    } else if (remaining_days > 0) {
+        /* If trigger is several days away, indicate with filled ring. */
+        for (int j = 0; j <= 10; j++) {
+            draw_circle(120, 120, CR - 6 - j, C_YELLOW);
+        }
+        ESP_LOGI(TAG, "Trigger in %d days (visual filled ring)", remaining_days);
+    }
+}
+
+
+
+
+
+
+void func_clock(int *second, int *minute, int *hour, int *state, int *time, int *set_time, int *set_duration, int *set_day_delay)
+{
+    int elapsed_day = 1;
     fill_screen(C_BLACK);
-    circular_clock_marks();
+    circular_clock_marks(C_WHITE);
+    arc_trigger(time, set_time, set_day_delay, &elapsed_day);
     draw_hour_numerals();
-
-    int next_trigger = calculate_next_trigger(*time, *set_time, *set_day_count);
-    *second = (*time) % 60;
-    *minute = ((*time) / 60) % 60;
-    *hour = ((*time) / 3600) % 12;
-
-    draw_remaining_hours(*time, next_trigger);
     hour_hand(*hour, C_GREEN);
     minute_hand(*minute, C_BLUE);
     second_hand(*second, C_RED);
 
+    // Free-running 1 Hz time base. Counting vTaskDelay() iterations drifts,
+    // because the redraw below costs far more than the delay itself.
     int64_t next_tick_us = esp_timer_get_time() + 1000000;
+
     while (*state == 11) {
+        if (button_pressed(OK, &last_ok)) {
+            // ESP_LOGI(TAG, "OK button pressed");
+            *state = 12;
+            return;
+        }
+
+        // Advance by however many whole seconds actually elapsed, so a slow
+        // redraw makes the hands jump rather than making the clock run late.
         int elapsed = 0;
         while (esp_timer_get_time() >= next_tick_us) {
             next_tick_us += 1000000;
@@ -497,70 +510,92 @@ void active_function_clock(int *second, int *minute, int *hour, int *state, int 
             int prev_minute = *minute;
             int prev_hour = *hour;
 
-            *time += elapsed;
-            *second = *time % 60;
-            *minute = (*time / 60) % 60;
-            *hour = (*time / 3600) % 12;
+            for (int i = 0; i < elapsed; i++) {
+                (*time)++;
+                (*second)++;
+                if (*second >= 60) {
+                    *second = 0;
+                    (*minute)++;
+                    if (*minute >= 60) {
+                        *minute = 0;
+                        (*hour)++;
+                        arc_trigger(time, set_time, set_day_delay, &elapsed_day);
+                        if (*hour >= 12) {
+                            *hour = 0;
+                        }
+                    }
+                }
+                if (*time >= 86400) {
+                    *time -= 86400;
+                    elapsed_day++;
+                }
+            }
+            // ESP_LOGI(TAG, "This is the time: %d", *time);
 
-            int next_trigger = calculate_next_trigger(*time, *set_time, *set_day_count);
-            int remaining_seconds = next_trigger - *time;
-
-            second_hand(prev_second, C_BLACK);
+            second_hand(prev_second, C_BLACK); // Erase previous second hand
             if (*minute != prev_minute) {
                 minute_hand(prev_minute, C_BLACK);
             }
             if (*hour != prev_hour) {
                 hour_hand(prev_hour, C_BLACK);
             }
-            circular_clock_marks();
-            draw_hour_numerals();
-            draw_remaining_hours(*time, next_trigger);
+            circular_clock_marks(C_WHITE);
+            
             hour_hand(*hour, C_GREEN);
             minute_hand(*minute, C_BLUE);
             second_hand(*second, C_RED);
 
-            if (remaining_seconds <= 0) {
-                *state = 12;
-                return;
-            }
         }
 
         vTaskDelay(pdMS_TO_TICKS(10));
     }
+
+    
 }
 
+
+
+
 void select_clock(int *minute, int *hour, int *state, int *time) {
-    circular_clock_marks();
+    circular_clock_marks(C_WHITE);
+
+    // Work with a 12-hour display value for selection. Convert the incoming
+    // `*hour` (which may be 0..23 or 0..11) into 1..12 for the UI.
+    int disp_hour = (*hour) % 12;
+    if (disp_hour == 0) disp_hour = 12;
+
+    // Hour selection state
     while (*state == 0) {
-        hour_hand(*hour, C_GREEN);
+        hour_hand(disp_hour % 12, C_GREEN);
         bool up = button_pressed(UP, &last_up);
         bool down = button_pressed(DOWN, &last_down);
         bool ok = button_pressed(OK, &last_ok);
 
         if (up) {
             ESP_LOGI(TAG, "UP button pressed");
-            (*hour)++;
-            hour_hand(*hour - 1, C_BLACK);
-            hour_hand(*hour, C_GREEN);
-            if (*hour > 12) {
-                *hour = 0;
-            }
+            disp_hour++;
+            if (disp_hour > 12) disp_hour = 1;
+            hour_hand((disp_hour - 1) % 12, C_BLACK);
+            hour_hand(disp_hour % 12, C_GREEN);
+            ESP_LOGI(TAG, "Selected hour: %d", disp_hour);
         }
         if (down) {
             ESP_LOGI(TAG, "DOWN button pressed");
-            (*hour)--;
-            hour_hand(*hour + 1, C_BLACK);
-            hour_hand(*hour, C_GREEN);
-            if (*hour == 0) {
-                *hour = 12;
-            }
+            disp_hour--;
+            if (disp_hour < 1) disp_hour = 12;
+            hour_hand((disp_hour + 1) % 12, C_BLACK);
+            hour_hand(disp_hour % 12, C_GREEN);
+            ESP_LOGI(TAG, "Selected hour: %d", disp_hour);
         }
         if (ok) {
             ESP_LOGI(TAG, "OK button pressed");
             *state = 1;
+            break;
         }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
+
+    // Minute selection
     while (*state == 1) {
         minute_hand(*minute, C_BLUE);
         bool up = button_pressed(UP, &last_up);
@@ -570,82 +605,56 @@ void select_clock(int *minute, int *hour, int *state, int *time) {
         if (up) {
             ESP_LOGI(TAG, "UP button pressed");
             (*minute)++;
-            hour_hand(*hour, C_GREEN);
-            minute_hand(*minute - 1, C_BLACK);
+            if (*minute > 59) *minute = 0;
+            minute_hand((*minute - 1 + 60) % 60, C_BLACK);
             minute_hand(*minute, C_BLUE);
-            if (*minute > 59) {
-                *minute = 0;
-            }
         }
         if (down) {
             ESP_LOGI(TAG, "DOWN button pressed");
             (*minute)--;
-            hour_hand(*hour, C_GREEN);
-            minute_hand(*minute + 1, C_BLACK);
+            if (*minute < 0) *minute = 59;
+            minute_hand((*minute + 1) % 60, C_BLACK);
             minute_hand(*minute, C_BLUE);
-            
-            if (*minute == 0) {
-                *minute = 59;
-            }
         }
         if (ok) {
             ESP_LOGI(TAG, "OK button pressed");
             *state = 2;
+            break;
         }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
-    int ampm = 0;
-    draw_text_size("PM", 50, 120, C_WHITE,2);
-    while (*state == 2) 
-    {
-    bool up = button_pressed(UP, &last_up);
-    bool down = button_pressed(DOWN, &last_down);
-    bool ok = button_pressed(OK, &last_ok);
-    
-    if (up)
-        {
-            ampm ++;
-            if(ampm >1)
-            {
-                ampm = 0;
-                fill_rect(50, 120, 80, 140, C_BLACK);
-                draw_text_size("PM", 50, 120, C_WHITE,2);
-            }
-            else
-            {
-                fill_rect(50, 120, 80, 140, C_BLACK);
-                draw_text_size("AM", 50, 120, C_WHITE,2);
-            }
-        }
-    if (down) 
-    {
-            ampm --;
-            if(ampm <0)
-            {
-                ampm = 1;
-                fill_rect(50, 120, 80, 140, C_BLACK);
-                draw_text_size("AM", 50, 120, C_WHITE,2);
-            }
-            else
-            {
-                fill_rect(50, 120, 80, 140, C_BLACK);
-                draw_text_size("PM", 50, 120, C_WHITE,2);
-            }
+
+    // AM/PM selection: 0 = AM, 1 = PM. Start with PM shown for backward
+    // compatibility with previous UI (which displayed PM initially).
+    int ampm = 1; // default PM
+    draw_text_size(ampm ? "PM" : "AM", 50, 120, C_WHITE, 2);
+    while (*state == 2) {
+        bool up = button_pressed(UP, &last_up);
+        bool down = button_pressed(DOWN, &last_down);
+        bool ok = button_pressed(OK, &last_ok);
+        if (up || down) {
+            ampm = 1 - ampm;
+            fill_rect(50, 120, 80, 140, C_BLACK);
+            draw_text_size(ampm ? "PM" : "AM", 50, 120, C_WHITE, 2);
         }
         if (ok) {
             ESP_LOGI(TAG, "OK button pressed");
             *state = 3;
+            break;
         }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
-    if(ampm == 0)
-    {
-        *hour += 12;
-    }
 
-    *time = *minute * 60 + *hour * 3600;
-    if (*time < 0) {
-        *time = -*time;
+    // Convert selected 12-hour value + AM/PM into 24-hour `*hour`.
+    int final_hour24;
+    if (ampm == 0) { // AM
+        final_hour24 = (disp_hour == 12) ? 0 : disp_hour;
+    } else { // PM
+        final_hour24 = (disp_hour == 12) ? 12 : (disp_hour + 12);
     }
-    ESP_LOGI(TAG, "This is the time: %d", *time);
+    *hour = final_hour24;
+
+    // Compose `*time` from hour/minute
+    *time = (*minute) * 60 + (*hour) * 3600;
+    ESP_LOGI(TAG, "This is the time: %d (hour=%d minute=%d ampm=%d)", *time, *hour, *minute, ampm);
 }

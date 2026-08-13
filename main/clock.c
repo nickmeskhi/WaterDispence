@@ -85,7 +85,7 @@ void draw_hour_numerals(void) {
     }
 }
 
-void circular_clock_marks(void) {
+void circular_clock_marks(uint16_t colour) {
 
     draw_circle(CX, CY, CR - 2, C_WHITE);
     for (int deg = 0; deg < 360; deg += 6) {
