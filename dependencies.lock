@@ -31,5 +31,5 @@ direct_dependencies:
 - espressif/esp_lcd_gc9a01
 - idf
 manifest_hash: b2c24eceb90d17cb515f3f5f13d8957d8c962478120847924f4548d1faf18e87
-target: esp32
+target: esp32c3
 version: 3.0.0

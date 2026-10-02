@@ -475,12 +475,11 @@ void arc_trigger (int *time, int *set_time, int *set_day_delay, int *elapsed_day
 
 
 
-void func_clock(int *second, int *minute, int *hour, int *state, int *time, int *set_time, int *set_duration, int *set_day_delay)
+void func_clock(int *second, int *minute, int *hour, int *state, int *time, int *set_time, int *set_duration, int *set_day_delay, int *elapsed_day)
 {
-    int elapsed_day = 1;
     fill_screen(C_BLACK);
     circular_clock_marks(C_WHITE);
-    arc_trigger(time, set_time, set_day_delay, &elapsed_day);
+    arc_trigger(time, set_time, set_day_delay, elapsed_day);
     draw_hour_numerals();
     hour_hand(*hour, C_GREEN);
     minute_hand(*minute, C_BLUE);
@@ -493,7 +492,7 @@ void func_clock(int *second, int *minute, int *hour, int *state, int *time, int 
     while (*state == 11) {
         if (button_pressed(OK, &last_ok)) {
             // ESP_LOGI(TAG, "OK button pressed");
-            *state = 12;
+            *state = 4;
             return;
         }
 
@@ -510,28 +509,21 @@ void func_clock(int *second, int *minute, int *hour, int *state, int *time, int 
             int prev_minute = *minute;
             int prev_hour = *hour;
 
-            for (int i = 0; i < elapsed; i++) {
-                (*time)++;
-                (*second)++;
-                if (*second >= 60) {
-                    *second = 0;
-                    (*minute)++;
-                    if (*minute >= 60) {
-                        *minute = 0;
-                        (*hour)++;
-                        arc_trigger(time, set_time, set_day_delay, &elapsed_day);
-                        if (*hour >= 12) {
-                            *hour = 0;
-                        }
-                    }
-                }
-                if (*time >= 86400) {
-                    *time -= 86400;
-                    elapsed_day++;
-                }
-            }
-            // ESP_LOGI(TAG, "This is the time: %d", *time);
+            /* Advance the master time by the whole elapsed seconds at once
+               and derive second/minute/hour from it. This avoids tight
+               per-second loops that accumulate delay when drawing is slow. */
+            (*time) += elapsed;
 
+            while (*time >= 86400) {
+                *time -= 86400;
+                (*elapsed_day)++;
+            }
+
+            *second = (*time) % 60;
+            *minute = ((*time) / 60) % 60;
+            *hour = ((*time) / 3600) % 12;
+
+            /* Refresh visuals once per update */
             second_hand(prev_second, C_BLACK); // Erase previous second hand
             if (*minute != prev_minute) {
                 minute_hand(prev_minute, C_BLACK);
@@ -540,10 +532,16 @@ void func_clock(int *second, int *minute, int *hour, int *state, int *time, int 
                 hour_hand(prev_hour, C_BLACK);
             }
             circular_clock_marks(C_WHITE);
-            
+            /* Update arc once after time advanced */
+            arc_trigger(time, set_time, set_day_delay, elapsed_day);
             hour_hand(*hour, C_GREEN);
             minute_hand(*minute, C_BLUE);
             second_hand(*second, C_RED);
+
+            if (*time == *set_time && (*elapsed_day) <= *set_day_delay) {
+                *state = 12;
+            }
+            ESP_LOGI(TAG,"State is %d, time is %d, set_time is %d, elapsed_day is %d, set_day_delay is %d", *state, *time, *set_time, *elapsed_day, *set_day_delay);
 
         }
 
@@ -657,4 +655,50 @@ void select_clock(int *minute, int *hour, int *state, int *time) {
     // Compose `*time` from hour/minute
     *time = (*minute) * 60 + (*hour) * 3600;
     ESP_LOGI(TAG, "This is the time: %d (hour=%d minute=%d ampm=%d)", *time, *hour, *minute, ampm);
+}
+
+
+void watering (int *state, int *time, int *set_time, int *set_duration, int *set_day_delay, int *elapsed_day) {
+    fill_screen(C_BLACK);
+    draw_text("Watering...", 30, 50, C_WHITE);
+    ESP_LOGI(TAG, "Watering started at time %d", *time);
+
+    int left_seconds = *set_duration;
+    while (left_seconds > 0 && *state != 0) {
+        int mins = left_seconds / 60;
+        int secs = left_seconds % 60;
+        int min_1 = (mins / 10) % 10;
+        int min_2 = mins % 10;
+        int sec_1 = (secs / 10) % 10;
+        int sec_2 = secs % 10;
+
+        draw_digit(8, SEGMENT_1_X, SEGMENT_Y, C_BLACK);
+        draw_digit(8, SEGMENT_2_X, SEGMENT_Y, C_BLACK);
+        draw_digit(8, SEGMENT_3_X, SEGMENT_Y, C_BLACK);
+        draw_digit(8, SEGMENT_4_X, SEGMENT_Y, C_BLACK);
+        draw_digit(min_1, SEGMENT_1_X, SEGMENT_Y, C_YELLOW);
+        draw_digit(min_2, SEGMENT_2_X, SEGMENT_Y, C_YELLOW);
+        draw_digit(sec_1, SEGMENT_3_X, SEGMENT_Y, C_YELLOW);
+        draw_digit(sec_2, SEGMENT_4_X, SEGMENT_Y, C_YELLOW);
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        left_seconds--;
+    }
+
+    /* Watering complete */
+    fill_screen(C_BLACK);
+    draw_text("Watering complete", 20, 80, C_WHITE);
+    draw_text("Beginning next cycle", 10, 60, C_WHITE);
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    ESP_LOGI(TAG, "Watering completed at time %d", *time);
+
+    /* Advance time by duration and handle day rollover */
+    *time += *set_duration;
+    if (*time >= 86400) {
+        *time -= 86400;
+        (*elapsed_day)++;
+    }
+
+    /* Return to function-display state (11) as requested */
+    *state = 11;
 }

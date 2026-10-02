@@ -16,7 +16,7 @@
 #include "op_func.h"
 #include "test_patterns.h" // Test patterns implemented in test_patterns.c
 
-//static const char *TAG = "main";
+static const char *TAG = "main";
 
 static int last_up = 1;
 static int last_down = 1;
@@ -31,16 +31,17 @@ static const int SEGMENT_4_X = 177;
 static const int SEGMENT_Y = 69;
 */
 // Button pin definitions (shared across main and clock)
-#define OK  32
+//#define OK  32
 #define RIGHT  33
 #define LEFT  25
 #define UP  26
 #define DOWN  27
+#define RELAY 
 
 
 void setup() {
-    gpio_set_direction(OK, GPIO_MODE_INPUT);
-    gpio_set_pull_mode(OK, GPIO_PULLUP_ONLY);
+    //gpio_set_direction(OK, GPIO_MODE_INPUT);
+    //gpio_set_pull_mode(OK, GPIO_PULLUP_ONLY);
     gpio_set_direction(RIGHT, GPIO_MODE_INPUT);
     gpio_set_pull_mode(RIGHT, GPIO_PULLUP_ONLY);
     gpio_set_direction(LEFT, GPIO_MODE_INPUT);
@@ -49,21 +50,22 @@ void setup() {
     gpio_set_pull_mode(UP, GPIO_PULLUP_ONLY);
     gpio_set_direction(DOWN, GPIO_MODE_INPUT);
     gpio_set_pull_mode(DOWN, GPIO_PULLUP_ONLY);
+
 }
 
 
 
 
 // ── Pin config ── adjust to your wiring ──────────────────
-#define PIN_MOSI    23
-#define PIN_SCLK    18
-#define PIN_CS      15
-#define PIN_DC       2
-#define PIN_RST      4
+#define PIN_MOSI    6 
+#define PIN_SCLK    4
+#define PIN_CS      1
+#define PIN_DC       10
+#define PIN_RST      3
 // No backlight pin — BL wire goes to 3.3V directly
 
 #define SPI_HOST    SPI2_HOST
-#define SPI_CLK_HZ  (5 * 1000 * 1000)
+#define SPI_CLK_HZ  (40 * 1000 * 1000)
 
 
 
@@ -78,7 +80,7 @@ static void lcd_init(void) {
         .sclk_io_num     = PIN_SCLK,
         .quadwp_io_num   = -1,
         .quadhd_io_num   = -1,
-        .max_transfer_sz = LCD_W * 4,
+       .max_transfer_sz = LCD_W * LCD_H * 2,
     };
     ESP_ERROR_CHECK(spi_bus_initialize(SPI_HOST, &bus_cfg, SPI_DMA_CH_AUTO));
 
@@ -106,7 +108,7 @@ static void lcd_init(void) {
 
     ESP_ERROR_CHECK(esp_lcd_panel_reset(panel));
     ESP_ERROR_CHECK(esp_lcd_panel_init(panel));
-    ESP_ERROR_CHECK(esp_lcd_panel_invert_color(panel, true));  // GC9A01 needs inversion
+    ESP_ERROR_CHECK(esp_lcd_panel_invert_color(panel, false));  // GC9A01 needs inversion
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel, true));
 }
 
@@ -122,12 +124,17 @@ static bool button_pressed(int gpio_num, int *last_state) {
     return false;
 }
 
-
+static void solid(uint16_t color) {
+    static uint16_t line[LCD_W];
+    for (int i = 0; i < LCD_W; i++) line[i] = color;
+    for (int y = 0; y < LCD_H; y++)
+        esp_lcd_panel_draw_bitmap(panel, 0, y, LCD_W, y + 1, line);
+}
 
 void app_main(void) {
-    lcd_init();
-    fill_screen(C_BLACK);
-    setup();
+  //  lcd_init();
+  //  fill_screen(C_RED);
+  /*  setup();
     vTaskDelay(pdMS_TO_TICKS(300));
     int state = 0;
     int second = 0;
@@ -139,6 +146,7 @@ void app_main(void) {
     int set_time = 0;
     int set_duration = 0;
     int set_day_count = 1;
+    int elapsed_day = 1; 
 
 
 
@@ -152,6 +160,10 @@ void app_main(void) {
         }
         if(state==3)
         {
+            
+            second = time % 60;
+            minute = (time / 60) % 60;
+            hour = (time / 3600) % 12;
             active_clock(&second,&minute,&hour,&state,&time);
         }
         if(state==4)
@@ -164,19 +176,45 @@ void app_main(void) {
         }
         if(state==11)
         {
-            func_clock(&second,&minute,&hour,&state,&time,&set_time,&set_duration,&set_day_count);
+          \
+            second = time % 60;
+            minute = (time / 60) % 60;
+            hour = (time / 3600) % 12;
+            func_clock(&second,&minute,&hour,&state,&time,&set_time,&set_duration,&set_day_count,&elapsed_day);
+        }
+        if(state==12)
+        {
+            watering(&state, &time, &set_time, &set_duration, &set_day_count, &elapsed_day);
         }
 
 
         vTaskDelay(pdMS_TO_TICKS(100));
     }
+*/
 
-    
+lcd_init();
 
+    uint16_t red = 0xF800;
 
- 
-    vTaskDelay(pdMS_TO_TICKS(2000));
-    
+    static uint16_t buffer[240 * 240];
+
+    for (int i = 0; i < 240 * 240; i++) {
+        buffer[i] = red;
+    }
+
+    ESP_ERROR_CHECK(
+        esp_lcd_panel_draw_bitmap(
+            panel,
+            0, 0,
+            240, 240,
+            buffer
+        )
+    );
+
+    while (1) {
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+
 
 
 }
