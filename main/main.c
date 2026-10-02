@@ -65,7 +65,7 @@ void setup() {
 // No backlight pin — BL wire goes to 3.3V directly
 
 #define SPI_HOST    SPI2_HOST
-#define SPI_CLK_HZ  (40 * 1000 * 1000)
+#define SPI_CLK_HZ  (5 * 1000 * 1000)
 
 
 
@@ -108,7 +108,7 @@ static void lcd_init(void) {
 
     ESP_ERROR_CHECK(esp_lcd_panel_reset(panel));
     ESP_ERROR_CHECK(esp_lcd_panel_init(panel));
-    ESP_ERROR_CHECK(esp_lcd_panel_invert_color(panel, false));  // GC9A01 needs inversion
+    ESP_ERROR_CHECK(esp_lcd_panel_invert_color(panel, true));  // GC9A01 needs inversion
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel, true));
 }
 
