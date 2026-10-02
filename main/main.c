@@ -80,7 +80,7 @@ static void lcd_init(void) {
         .sclk_io_num     = PIN_SCLK,
         .quadwp_io_num   = -1,
         .quadhd_io_num   = -1,
-       .max_transfer_sz = LCD_W * LCD_H * 2,
+        .max_transfer_sz = LCD_W * 4,
     };
     ESP_ERROR_CHECK(spi_bus_initialize(SPI_HOST, &bus_cfg, SPI_DMA_CH_AUTO));
 
@@ -192,27 +192,19 @@ void app_main(void) {
     }
 */
 
-lcd_init();
+    lcd_init();
+    ESP_LOGI(TAG, "LCD init done");
 
-    uint16_t red = 0xF800;
-
-    static uint16_t buffer[240 * 240];
-
-    for (int i = 0; i < 240 * 240; i++) {
-        buffer[i] = red;
-    }
-
-    ESP_ERROR_CHECK(
-        esp_lcd_panel_draw_bitmap(
-            panel,
-            0, 0,
-            240, 240,
-            buffer
-        )
-    );
+    // Display test: cycle full-screen colours once per second
+    static const char *names[] = {"red", "green", "blue", "white"};
+    const uint16_t colours[] = {C_RED, C_GREEN, C_BLUE, C_WHITE};
 
     while (1) {
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        for (int i = 0; i < 4; i++) {
+            ESP_LOGI(TAG, "Fill %s", names[i]);
+            fill_screen(colours[i]);
+            vTaskDelay(pdMS_TO_TICKS(1000));
+        }
     }
 
 
